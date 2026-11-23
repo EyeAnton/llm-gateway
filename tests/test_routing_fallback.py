@@ -180,9 +180,10 @@ def test_openai_provider_maps_errors(status, kind):
     assert e.value.retryable == (kind != "bad_request")
 
 
-def test_openai_provider_unreachable_is_retryable():
+@pytest.mark.parametrize("exc", [httpx.ConnectError, httpx.ConnectTimeout])
+def test_openai_provider_unreachable_is_retryable(exc):
     def handler(req):
-        raise httpx.ConnectError("asus asleep")
+        raise exc("asus asleep")
     with pytest.raises(ProviderError) as e:
         asyncio.run(_provider(handler).complete([{"role": "user", "content": "hi"}], {}))
     assert e.value.kind == "unavailable" and e.value.retryable

@@ -27,6 +27,7 @@ class ProviderCfg:
     # openai-compatible upstream
     base_url: str | None = None
     api_key_env: str | None = None  # name of env var with the key, never the key itself
+    connect_timeout_s: float = 3.0  # fail fast when the host is down (e.g. ASUS asleep)
     # stub behaviour
     latency_ms: float = 0.0
     fail_with: str | None = None  # "429" | "500" | "503" | "timeout"

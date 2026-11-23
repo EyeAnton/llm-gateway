@@ -1,0 +1,26 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: gateway
+      POSTGRES_PASSWORD: gateway   # local demo only
+      POSTGRES_DB: gateway
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gateway"]
+      interval: 2s
+      retries: 20
+
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+asyncpg://gateway:gateway@db:5432/gateway
+      GATEWAY_CONFIG: /app/config/gateway.yaml
+    ports: ["8080:8080"]
+    volumes: ["./config:/app/config:ro"]   # edit routing rules without rebuilding (restart app)
+    depends_on:
+      db: {condition: service_healthy}
+
+volumes:
+  pgdata:

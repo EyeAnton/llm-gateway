@@ -114,8 +114,11 @@ class OpenAIProvider:
         body = {"model": self.cfg.model, "messages": messages, **params, "stream": False}
         url = self.cfg.base_url.rstrip("/") + "/chat/completions"
         try:
-            async with httpx.AsyncClient(timeout=self.cfg.timeout_s, transport=self._transport) as client:
+            timeout = httpx.Timeout(self.cfg.timeout_s, connect=self.cfg.connect_timeout_s)
+            async with httpx.AsyncClient(timeout=timeout, transport=self._transport) as client:
                 r = await client.post(url, json=body, headers=headers)
+        except httpx.ConnectTimeout as e:
+            raise ProviderError("unavailable", 503, f"{self.cfg.name}: host unreachable (connect timeout)") from e
         except httpx.TimeoutException as e:
             raise ProviderError("timeout", 504, f"{self.cfg.name}: timeout ({e.__class__.__name__})") from e
         except httpx.TransportError as e:

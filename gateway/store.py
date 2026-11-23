@@ -48,6 +48,12 @@ class Store:
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
+    async def reset(self) -> None:
+        """Drop and recreate the journal (tests only)."""
+        async with self.engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+            await conn.run_sync(Base.metadata.create_all)
+
     async def close(self) -> None:
         await self.engine.dispose()
 

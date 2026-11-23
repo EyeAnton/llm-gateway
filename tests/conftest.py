@@ -1,4 +1,5 @@
 import copy
+import os
 from typing import Any
 
 import pytest
@@ -58,10 +59,13 @@ def make_client(tmp_path):
         cfg = copy.deepcopy(BASE_CONFIG)
         if patch:
             patch(cfg)
-        db = tmp_path / f"gw{len(clients)}.db"
-        app = create_app(cfg, database_url=f"sqlite+aiosqlite:///{db}")
+        # TEST_DATABASE_URL=postgresql+asyncpg://... runs the suite against Postgres (CI job);
+        # default is a fresh SQLite file per client.
+        db_url = os.environ.get("TEST_DATABASE_URL") or f"sqlite+aiosqlite:///{tmp_path / f'gw{len(clients)}.db'}"
+        app = create_app(cfg, database_url=db_url)
         client = TestClient(app)
         client.__enter__()
+        client.portal.call(app.state.gateway.store.reset)
         clients.append(client)
         return client
 
