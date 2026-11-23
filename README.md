@@ -67,8 +67,14 @@ Tests (stubs only, no network, no secrets):
 ```bash
 .venv/bin/pytest                                          # SQLite
 TEST_DATABASE_URL=postgresql+asyncpg://... .venv/bin/pytest   # same suite on Postgres
-LLM_GATEWAY_LIVE=1 .venv/bin/pytest -m live               # real LM Studio on ASUS
+LM_STUDIO_URL=http://<host>:1234/v1 LLM_GATEWAY_LIVE=1 .venv/bin/pytest -m live   # real LM Studio on ASUS
 ```
+
+The LM Studio host is never stored in the repo: `base_url` in `config/gateway.yaml` is
+`${LM_STUDIO_URL:-http://your-lm-studio-host:1234/v1}` (`${VAR}` / `${VAR:-default}` are expanded on load).
+Live-test notes: a 12B model on an 8 GB GPU answers in 5–20 s when idle, but latency jumps to minutes
+when ComfyUI shares the GPU. The 60 s provider timeout then fires and the `local` route falls back to
+`stub-cheap`. That is the intended behaviour, not a gateway bug.
 
 ## Example
 

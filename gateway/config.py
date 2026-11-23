@@ -7,6 +7,7 @@ every rule must reference a known route.
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -14,6 +15,20 @@ from typing import Any
 import yaml
 
 VALID_FAILURES = {None, "429", "500", "503", "timeout"}
+_ENV_REF = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}")
+
+
+def expand_env(value: str) -> str:
+    """Expand ${VAR} / ${VAR:-default} so machine-specific hosts stay out of the repo."""
+    def sub(m: re.Match[str]) -> str:
+        var, default = m.group(1), m.group(2)
+        val = os.environ.get(var)
+        if val:
+            return val
+        if default is not None:
+            return default
+        raise ValueError(f"environment variable {var} is not set")
+    return _ENV_REF.sub(sub, value)
 
 
 @dataclass
@@ -80,6 +95,8 @@ def _provider(name: str, raw: dict[str, Any]) -> ProviderCfg:
     raw = dict(raw)
     if raw.get("fail_with") is not None:
         raw["fail_with"] = str(raw["fail_with"])
+    if isinstance(raw.get("base_url"), str):
+        raw["base_url"] = expand_env(raw["base_url"])
     cfg = ProviderCfg(name=name, **raw)
     if cfg.type not in ("stub", "openai"):
         raise ValueError(f"provider {name}: unknown type {cfg.type!r}")

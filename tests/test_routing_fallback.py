@@ -152,6 +152,21 @@ def test_shipped_config_is_valid():
     assert "asus-gemma" in cfg.providers and cfg.providers["asus-gemma"].type == "openai"
 
 
+def test_base_url_reads_host_from_env(monkeypatch):
+    monkeypatch.delenv("LM_STUDIO_URL", raising=False)
+    assert "your-lm-studio-host" in load_config("config/gateway.yaml").providers["asus-gemma"].base_url
+    monkeypatch.setenv("LM_STUDIO_URL", "http://lm.example:1234/v1")
+    assert load_config("config/gateway.yaml").providers["asus-gemma"].base_url == "http://lm.example:1234/v1"
+
+
+def test_base_url_without_default_requires_env(monkeypatch):
+    monkeypatch.delenv("NO_SUCH_HOST_VAR", raising=False)
+    raw = {"providers": {"p": {"type": "openai", "model": "m", "base_url": "${NO_SUCH_HOST_VAR}"}},
+           "routes": {"r": ["p"]}, "routing": {"default_route": "r"}}
+    with pytest.raises(ValueError, match="NO_SUCH_HOST_VAR"):
+        load_config(raw)
+
+
 # ---------- OpenAI-compatible provider (mocked transport, no network) ----------
 
 def _provider(handler):
