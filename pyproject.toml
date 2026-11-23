@@ -1,0 +1,31 @@
+[project]
+name = "llm-gateway"
+version = "0.1.0"
+description = "OpenAI-compatible LLM gateway: routing, fallback, exact cache, cost accounting, budgets, Prometheus metrics"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "httpx>=0.27",
+    "sqlalchemy[asyncio]>=2.0.30",
+    "asyncpg>=0.29",
+    "aiosqlite>=0.20",
+    "pyyaml>=6.0",
+    "prometheus-client>=0.20",
+    "pydantic>=2.7",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.2"]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["gateway"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = ["live: needs the real LM Studio on ASUS (set LLM_GATEWAY_LIVE=1)"]
