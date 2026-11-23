@@ -1,0 +1,86 @@
+# llm-gateway config. Read top to bottom: providers -> routes -> routing rules -> keys.
+#
+# Prices are USD per 1k tokens. Stub providers are fake models: they never call anything paid,
+# but behave like one (latency, price, errors), so routing/fallback/cost can be exercised offline.
+
+providers:
+  stub-smart:            # "big" model: slow and expensive
+    type: stub
+    model: stub-smart-v1
+    price_in_per_1k: 0.003
+    price_out_per_1k: 0.015
+    latency_ms: 400
+    timeout_s: 10
+  stub-fast:             # "mid" model: default workhorse
+    type: stub
+    model: stub-fast-v1
+    price_in_per_1k: 0.0005
+    price_out_per_1k: 0.0015
+    latency_ms: 120
+    timeout_s: 5
+  stub-cheap:            # "small" model: cheapest
+    type: stub
+    model: stub-cheap-v1
+    price_in_per_1k: 0.0001
+    price_out_per_1k: 0.0002
+    latency_ms: 60
+    timeout_s: 5
+  stub-flaky:            # demo of fallback: always answers 429
+    type: stub
+    model: stub-flaky-v1
+    price_in_per_1k: 0.0005
+    price_out_per_1k: 0.0015
+    fail_with: 429
+    timeout_s: 5
+  asus-gemma:            # real free local model: LM Studio on ASUS over Tailscale
+    type: openai
+    base_url: http://eyeanton-asus:1234/v1
+    model: google/gemma-3-12b
+    price_in_per_1k: 0
+    price_out_per_1k: 0
+    timeout_s: 60
+
+routes:                  # name -> fallback chain (first healthy provider wins)
+  smart:   [stub-smart, stub-fast]
+  general: [stub-fast, stub-cheap]
+  cheap:   [stub-cheap, stub-fast]
+  local:   [asus-gemma, stub-cheap]
+  long:    [stub-smart, stub-fast]
+  flaky-demo: [stub-flaky, stub-fast]
+
+routing:
+  default_route: general
+  max_attempts: 3        # providers tried per request, at most
+  rules:                 # model="auto": first matching rule wins
+    - name: budget-nearly-spent
+      budget_left_below_usd: 0.50
+      route: cheap
+    - name: private-data
+      task: private
+      route: local
+    - name: code
+      task: code
+      route: smart
+    - name: long-prompt
+      min_prompt_tokens: 2000
+      route: long
+    - name: classify
+      task: classify
+      route: cheap
+
+cache:
+  ttl_s: 3600
+  max_entries: 10000
+
+keys:                    # demo keys only; real keys belong in a secret store, not in git
+  - key: sk-demo-games
+    name: games-dev
+    team: games
+    budget_usd: 5.0
+  - key: sk-demo-analytics
+    name: analytics-bot
+    team: analytics
+    budget_usd: 1.0
+  - key: sk-demo-unlimited
+    name: platform-admin
+    team: platform
