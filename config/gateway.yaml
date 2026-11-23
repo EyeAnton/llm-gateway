@@ -34,7 +34,7 @@ providers:
     timeout_s: 5
   asus-gemma:            # real free local model: LM Studio on ASUS over Tailscale
     type: openai
-    base_url: http://eyeanton-asus:1234/v1
+    base_url: http://your-lm-studio-host:1234/v1
     model: google/gemma-3-12b
     price_in_per_1k: 0
     price_out_per_1k: 0

@@ -28,7 +28,7 @@ Gemma 3 12B in LM Studio. No paid API is called anywhere, including tests.
          ▼                       ▼                           ▼
    stub-smart / stub-fast   asus-gemma (LM Studio,      Postgres: requests
    stub-cheap / stub-flaky  OpenAI-compatible API,      GET /metrics  GET /stats
-   (fake, offline)          http://eyeanton-asus:1234)
+   (fake, offline)          http://your-lm-studio-host:1234)
 ```
 
 Code map:
